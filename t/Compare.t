@@ -16,57 +16,45 @@ BEGIN {
     exit 0;
   }
 }
-print "1..13\n";
+#use Test::More qw( tests => 13 );
+use Test::More qw( no_plan );
 
 use File::Compare qw(compare compare_text);
 
-print "ok 1\n";
+# Upon success, compare() and compare_text() return a Unix-ish 0
+# rather than a Perl-ish 1.  So tests for truth must be inverted.
 
-# named files, same, existing but different, cause an error
-print "not " unless compare($README,$README) == 0;
-print "ok 2\n";
+ok(! compare($README,$README), "compare file to itself");
+ok(  compare($TEST,$README), "compare file to different file");
+is(  compare($README,"HLAGHLAG"), -1,
+    "compare file to nonexistent file returns error value"); 
 
+ok(! compare_text($README,$README), "compare_text file to itself");
+ok(  compare_text($TEST,$README), "compare_text file to different file");
+is(  compare_text($TEST,"HLAGHLAG"), -1,
+    "compare_text file to nonexistent file returns error value");
+ok(! compare_text($README,$README,sub {$_[0] ne $_[1]}),
+    "compare_text with code ref as third argument, file to itself");
 
-print "not " unless compare($TEST,$README) == 1;
-print "ok 3\n";
+ok(  compare_text($TEST,$README,sub {$_[0] ne $_[1]}),
+    "compare_text with code ref as third argument, file to different file");
 
-print "not " unless compare($README,"HLAGHLAG") == -1;
-                               # a file which does not exist
-print "ok 4\n";
-
-# compare_text, the same file, different but existing files
-# cause error, test sub form.
-print "not " unless compare_text($README,$README) == 0;
-print "ok 5\n";
-
-print "not " unless compare_text($TEST,$README) == 1;
-print "ok 6\n";
-
-print "not " unless compare_text($TEST,"HLAGHLAG") == -1;
-print "ok 7\n";
-
-print "not " unless
-  compare_text($README,$README,sub {$_[0] ne $_[1]}) == 0;
-print "ok 8\n";
-
-# filehandle and same file
 {
-  my $fh;
-  open ($fh, '<', $README) or print "not ";
-  binmode($fh);
-  print "not " unless compare($fh,$README) == 0;
-  print "ok 9\n";
-  close $fh;
+    open my $fh, '<', $README
+        or die "Unable to open $README for reading: $!";
+    binmode($fh);
+    ok(! compare($fh,$README),
+        "compare file with filehandle open to same file");
+    close $fh;
 }
 
-# filehandle and different (but existing) file.
 {
-  my $fh;
-  open ($fh, '<', $README) or print "not ";
-  binmode($fh);
-  print "not " unless compare_text($fh,$TEST) == 1;
-  print "ok 10\n";
-  close $fh;
+    open my $fh, '<', $README
+        or die "Unable to open $README for reading: $!";
+    binmode($fh);
+    ok(compare($fh,$TEST),
+        "compare file with filehandle open to different file");
+    close $fh;
 }
 
 # Different file with contents of known file,
@@ -107,19 +95,21 @@ eval {
 };
 print "# problem '$@' when testing with a temporary file\n" if $@;
 
-if (@donetests == 3) {
-  print "not " unless $donetests[0] == 0;
-  print "ok 11 # fh/file [$donetests[0]]\n";
-  print "not " unless $donetests[1] == 0;
-  print "ok 12 # file/file [$donetests[1]]\n";
-  print "not " unless $donetests[2] == 0;
-  print "ok 13 # ";
-  print "TODO" if $^O eq "cygwin"; # spaces after filename silently trunc'd
-  print "TODO" if $^O eq "vos"; # spaces after filename silently trunc'd
-  print " file/fileCR [$donetests[2]]\n";
-}
-else {
-  print "ok 11# Skip\nok 12 # Skip\nok 13 # Skip Likely due to File::Temp\n";
+SKIP: {
+    my $why = "Likely due to File::Temp";
+    my $how_many = 3;
+    my $have_some_feature = (@donetests == 3);
+    skip $why, $how_many unless $have_some_feature;
+
+    ok(! $donetests[0], "fh/file [$donetests[0]]");
+    ok(! $donetests[1], "file/file [$donetests[1]]");
+    TODO: {
+        my $why = "spaces after filename silently truncated";
+        my $how_many = 1;
+        my $condition = ($^O eq "cygwin") or ($^O eq "vos");
+        todo_skip $why, $how_many if $condition;
+        ok(! $donetests[2], "file/fileCR [$donetests[2]]");
+    }
 }
 
 sub get_valid_whitespace {
