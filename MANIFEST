@@ -1,6 +1,7 @@
+Changes
+lib/File/Compare.pm
+Makefile.PL
 MANIFEST
 README
-Changes
-Makefile.PL
-lib/File/Compare.pm
+README.md
 t/Compare.t

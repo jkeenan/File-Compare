@@ -15,82 +15,138 @@ $VERSION = '1.1006';
 $Too_Big = 1024 * 1024 * 2;
 
 sub croak {
+print STDERR "AAA:", "\n";
     require Carp;
     goto &Carp::croak;
 }
 
 sub compare {
-    croak("Usage: compare( file1, file2 [, buffersize]) ")
-      unless(@_ == 2 || @_ == 3);
+#    croak("Usage: compare( file1, file2 [, buffersize]) ")
+#      unless(@_ == 2 || @_ == 3);
+    unless(@_ == 2 || @_ == 3) {
+print STDERR "BBB:", "\n";
+    croak("Usage: compare( file1, file2 [, buffersize]) ") ;
+}
 
     my ($from,$to,$size) = @_;
     my $text_mode = defined($size) && (ref($size) eq 'CODE' || $size < 0);
+print STDERR "CCC: $text_mode", "\n";
 
     my ($fromsize,$closefrom,$closeto);
     local (*FROM, *TO);
 
-    croak("from undefined") unless (defined $from);
-    croak("to undefined") unless (defined $to);
+#    croak("from undefined") unless (defined $from);
+#    croak("to undefined") unless (defined $to);
+    unless (defined $from) {
+print STDERR "DDD:", "\n";
+       croak("from undefined")  ;
+   }
+    unless (defined $to) {
+print STDERR "EEE:", "\n";
+       croak("to undefined")  ;
+   }
 
     if (ref($from) && 
         (UNIVERSAL::isa($from,'GLOB') || UNIVERSAL::isa($from,'IO::Handle'))) {
+print STDERR "FFF:", "\n";
 	*FROM = *$from;
     } elsif (ref(\$from) eq 'GLOB') {
+print STDERR "GGG:", "\n";
 	*FROM = $from;
     } else {
-	open(FROM,"<",$from) or goto fail_open1;
-	unless ($text_mode) {
-	    binmode FROM;
-	    $fromsize = -s FROM;
-	}
-	$closefrom = 1;
+print STDERR "HHH:", "\n";
+    	open(FROM,"<",$from) or goto fail_open1;
+    	unless ($text_mode) {
+print STDERR "III:", "\n";
+    	    binmode FROM;
+    	    $fromsize = -s FROM;
+    	}
+    	$closefrom = 1;
     }
 
     if (ref($to) &&
         (UNIVERSAL::isa($to,'GLOB') || UNIVERSAL::isa($to,'IO::Handle'))) {
+print STDERR "JJJ:", "\n";
 	*TO = *$to;
     } elsif (ref(\$to) eq 'GLOB') {
+print STDERR "KKK:", "\n";
 	*TO = $to;
     } else {
-	open(TO,"<",$to) or goto fail_open2;
-	binmode TO unless $text_mode;
-	$closeto = 1;
+print STDERR "LLL:", "\n";
+    	open(TO,"<",$to) or goto fail_open2;
+#    	binmode TO unless $text_mode;
+    	unless ($text_mode) {
+print STDERR "LLL:", "\n";
+           binmode TO  ;
+       }
+    	$closeto = 1;
     }
 
     if (!$text_mode && $closefrom && $closeto) {
+print STDERR "MMM:", "\n";
 	# If both are opened files we know they differ if their size differ
 	goto fail_inner if $fromsize != -s TO;
     }
 
     if ($text_mode) {
+print STDERR "NNN:", "\n";
 	local $/ = "\n";
 	my ($fline,$tline);
 	while (defined($fline = <FROM>)) {
-	    goto fail_inner unless defined($tline = <TO>);
+#	    goto fail_inner unless defined($tline = <TO>);
+	    unless (defined($tline = <TO>)) {
+print STDERR "OOO:", "\n";
+           goto fail_inner  ;
+       }
 	    if (ref $size) {
+print STDERR "PPP:", "\n";
 		# $size contains ref to comparison function
-		goto fail_inner if &$size($fline, $tline);
+#		goto fail_inner if &$size($fline, $tline);
+		if (&$size($fline, $tline)) {
+print STDERR "QQQ:", "\n";
+           goto fail_inner  ;
+       }
 	    } else {
-		goto fail_inner if $fline ne $tline;
+print STDERR "RRR:", "\n";
+#		goto fail_inner if $fline ne $tline;
+		if ($fline ne $tline) {
+print STDERR "SSS:", "\n";
+           goto fail_inner  ;
+       }
 	    }
 	}
-	goto fail_inner if defined($tline = <TO>);
+#	goto fail_inner if defined($tline = <TO>);
+	if (defined($tline = <TO>)) {
+print STDERR "TTT:", "\n";
+       goto fail_inner  ;
+   }
     }
     else {
+print STDERR "UUU:", "\n";
 	unless (defined($size) && $size > 0) {
+print STDERR "VVV:", "\n";
 	    $size = $fromsize || -s TO || 0;
 	    $size = 1024 if $size < 512;
-	    $size = $Too_Big if $size > $Too_Big;
+#	    $size = $Too_Big if $size > $Too_Big;
+	    if ($size > $Too_Big) {
+print STDERR "WWW:", "\n";
+           $size = $Too_Big  ;
+       }
 	}
 
 	my ($fr,$tr,$fbuf,$tbuf);
 	$fbuf = $tbuf = '';
 	while(defined($fr = read(FROM,$fbuf,$size)) && $fr > 0) {
 	    unless (defined($tr = read(TO,$tbuf,$fr)) && $tbuf eq $fbuf) {
+print STDERR "XXX:", "\n";
 		goto fail_inner;
 	    }
 	}
-	goto fail_inner if defined($tr = read(TO,$tbuf,$size)) && $tr > 0;
+#	goto fail_inner if defined($tr = read(TO,$tbuf,$size)) && $tr > 0;
+	if (defined($tr = read(TO,$tbuf,$size)) && $tr > 0) {
+print STDERR "YYY:", "\n";
+       goto fail_inner  ;
+   }
     }
 
     close(TO) || goto fail_open2 if $closeto;
