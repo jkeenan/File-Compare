@@ -127,12 +127,16 @@ print STDERR "TTT:", "\n";
         }
     }
     else {
-print STDERR "UUU:", "\n";
+print STDERR "UUU: ", $size || 'size not defined', "\n";
         unless (defined($size) && $size > 0) {
 print STDERR "VVV:", "\n";
             $size = $fromsize || -s TO || 0;
             $size = 1024 if $size < 512;
     #        $size = $Too_Big if $size > $Too_Big;
+    # We can only get to WWW if $size can be assigned a value > $Too_Big.
+    # But the only way that can be assigned is from $fromsize.  That can only
+    # happen in III above.  To do that we would probably have to create a temp
+    # file of size > too_big.  This may not be practical.
             if ($size > $Too_Big) {
 print STDERR "WWW:", "\n";
                $size = $Too_Big ;

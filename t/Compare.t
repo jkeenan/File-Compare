@@ -133,15 +133,6 @@ SKIP: {
         "compare() fails: second argument undefined");
 }
 
-{
-TODO: {
-    local $TODO = 'Hitting MMM, not WWW';
-    my $buffer = (1024 * 1024 * 2) + 1;
-    ok(compare( $TEST, $README, $buffer),
-        "extremely large buffer");
-}
-}
-
 sub get_valid_whitespace {
     return ' ' unless $^O eq 'VMS';
     return (exists $ENV{'DECC$EFS_CHARSET'} && $ENV{'DECC$EFS_CHARSET'} =~ /^[ET1]/i) 
