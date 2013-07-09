@@ -112,6 +112,36 @@ SKIP: {
     }
 }
 
+{
+    local $@;
+    eval { compare(); 1 };
+    like($@, qr/Usage:\s+compare/,
+        "detect insufficient arguments to compare()");
+}
+
+{
+    local $@;
+    eval { compare(undef, $README); 1 };
+    like($@, qr/from\s+undefined/,
+        "compare() fails: first argument undefined");
+}
+
+{
+    local $@;
+    eval { compare($README, undef ); 1 };
+    like($@, qr/to\s+undefined/,
+        "compare() fails: second argument undefined");
+}
+
+{
+TODO: {
+    local $TODO = 'Hitting MMM, not WWW';
+    my $buffer = (1024 * 1024 * 2) + 1;
+    ok(compare( $TEST, $README, $buffer),
+        "extremely large buffer");
+}
+}
+
 sub get_valid_whitespace {
     return ' ' unless $^O eq 'VMS';
     return (exists $ENV{'DECC$EFS_CHARSET'} && $ENV{'DECC$EFS_CHARSET'} =~ /^[ET1]/i) 
