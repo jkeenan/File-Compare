@@ -16,8 +16,7 @@ BEGIN {
     exit 0;
   }
 }
-#use Test::More qw( tests => 13 );
-use Test::More qw( no_plan );
+use Test::More ( tests => 16 );
 
 use File::Compare qw(compare compare_text);
 
